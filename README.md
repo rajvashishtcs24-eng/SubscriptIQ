@@ -1,155 +1,77 @@
-# SubscriptIQ
+﻿# SubscriptIQ - Enterprise Subscription & Governance Suite for Odoo 19
 
-**SubscriptIQ** is an advanced Subscription Management System built on Odoo 19.0 Community, developed for the Brightloop Software Hackathon.
+SubscriptIQ is an enterprise-grade subscription management architecture built natively on Odoo 19 and PostgreSQL 16. Engineered for regulatory compliance, security isolation, and seamless customer lifecycle management.
 
 ---
 
-## 👥 Team Module Ownership
+## 🏛 Core Architectural Pillars
 
-All custom modules reside in the `custom_addons/` directory:
-
-| Team Member | Module Name | Core Domain Responsibilities |
+| Component | Responsibility | Key Technologies |
 | :--- | :--- | :--- |
-| **Member 1** | `subscriptiq_subscription` | Product management, variants, subscription plans, quotation management, subscription creation & lifecycle engine, event history, billing integration interfaces. |
-| **Member 2** | `subscriptiq_billing` | Invoicing, payment processing, recurring billing engine, revenue recognition, financial reporting. |
-| **Member 3** | `subscriptiq_portal` | Customer portal, self-service subscription management, usage tracking, client analytics. |
+| **Customer Self-Service Portal** | Client-facing subscription inspection, renewal tracking, plan details | Odoo Portal Engine, QWeb, XML, Controllers |
+| **Staff & Identity Governance** | Segregated staff directory, complex authentication policies, role lockdown | res.users extension, Python Regex Constraints |
+| **Tamper-Proof Audit Engine** | Immutable compliance logging of user lifecycle & configuration deltas | subscription.audit.log, Custom ORM Hooks |
 
 ---
 
-## 🛠️ Stack & Specifications
+## 🚀 Quickstart & Deployment
 
-* **Odoo**: `19.0` (Community Edition, official `odoo:19.0` Docker image)
-* **Database**: `PostgreSQL 16` (`postgres:16`)
-* **Orchestration**: Docker Compose (Compose V2)
-* **Custom Addons Mount**: `./custom_addons` mapped to `/mnt/extra-addons` inside container
+### Prerequisites
+- Docker Engine 24.0+ & Docker Compose v2
 
----
+### Launch Environment
+\\\ash
+# 1. Clone the repository
+git clone https://github.com/rajvashishtcs24-eng/SubscriptIQ.git
+cd SubscriptIQ
 
-## 📋 Prerequisites
-
-Before running the application locally, ensure you have installed:
-
-1. **Docker Desktop**:
-   * Windows: Install [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/) with WSL 2 backend enabled.
-   * Linux/macOS: Install Docker Engine with Docker Compose V2 support (`docker compose version` >= 2.20).
-2. **Git**: Installed and configured.
-
----
-
-## 🚀 Environment Setup
-
-### 1. Configure Local Environment Variables
-
-Duplicate the template configuration `.env.example` into `.env`:
-
-**Windows PowerShell:**
-```powershell
-Copy-Item .env.example .env
-```
-
-**Bash / Linux / macOS:**
-```bash
+# 2. Configure environment (pre-configured defaults provided)
 cp .env.example .env
-```
 
-Open `.env` and set a secure local password for PostgreSQL:
-```env
-POSTGRES_PASSWORD=your_secure_password_here
-ODOO_PORT=8069
-```
-
-> [!NOTE]
-> `.env` is explicitly ignored in `.gitignore` and should never be committed to Git.
-
----
-
-## 🏃 Running the Stack
-
-### Start Odoo and PostgreSQL Services
-
-Start containers in detached (background) mode:
-
-**Windows PowerShell / Bash:**
-```powershell
+# 3. Spin up PostgreSQL and Odoo services
 docker compose up -d
-```
-
-Compose will:
-1. Pull `postgres:16` and `odoo:19.0` if not present locally.
-2. Initialize and start the PostgreSQL database container with health checks enabled.
-3. Wait until PostgreSQL is completely healthy before booting the Odoo container.
-4. Mount `./custom_addons` to `/mnt/extra-addons`.
-
-### Verify Container Status
-
-Check that both containers are running and healthy:
-
-```powershell
-docker compose ps
-```
-
-Expected output:
-* `subscriptiq_db` — `Up (healthy)`
-* `subscriptiq_odoo` — `Up`
+\\\
+Access the instance at \http://localhost:8069\.
 
 ---
 
-## 🌐 Accessing the Application
+## 🛡 Security & Compliance Architecture
 
-* **Odoo Web Interface**: [http://localhost:8069](http://localhost:8069)
-* **Odoo Longpolling (Livechat/Bus)**: `http://localhost:8072`
+### 1. Hardened Password Enforcement
+Staff accounts strictly enforce strong password complexity via Python constraints (\models/res_users.py\):
+- Minimum 9 characters
+- At least 1 uppercase letter (\[A-Z]\)
+- At least 1 lowercase letter (\[a-z]\)
+- At least 1 numerical digit (\[0-9]\)
+- At least 1 special symbol (\[!@#$%^&*...]\)
 
-On initial launch, Odoo will display the database creation assistant. Use the master password and database credentials defined in your `.env`.
+### 2. Role Elevation Lockdown
+To prevent privilege escalation attacks:
+- Non-administrators cannot grant, alter, or elevate membership within the Subscription Administrator or Staff security groups.
+- Elevation violations immediately trigger an access rejection.
 
----
-
-## 📂 Custom Addons Development
-
-Custom modules are developed locally in the `custom_addons/` directory:
-
-```
-SubscriptIQ/
-├── custom_addons/
-│   ├── subscriptiq_subscription/  # Member 1
-│   ├── subscriptiq_billing/       # Member 2
-│   └── subscriptiq_portal/        # Member 3
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
-└── README.md
-```
-
-Any files added inside `custom_addons/` are immediately mirrored into `/mnt/extra-addons` inside the Odoo container.
+### 3. Immutable Business Audit Trail (\subscription.audit.log\)
+Built specifically for financial, compliance, and governance requirements:
+- **Audit Logging**: Intercepts user lifecycle actions (\USER_CREATED\, \USER_MODIFIED\) capturing actor ID, timestamp, target record, and an automated JSON payload delta.
+- **Strict Immutability**: Any call to \write()\ or \unlink()\ raises a database-level \UserError\. Audit records cannot be altered or deleted by any user or administrator.
+- **Portal Data Isolation**: Portal group access rules (\ir.rule\) enforce an empty query domain (\[('id', '=', False)]\), preventing data exposure over customer RPC channels.
 
 ---
 
-## 📜 Viewing Logs
+## 🧭 Evaluator Walkthrough Guide
 
-To stream logs from all running services:
-```powershell
-docker compose logs -f
-```
+### Scenario A: Testing Customer Portal
+1. Navigate to \http://localhost:8069/my\.
+2. Notice the dedicated **Subscriptions** counter card under the portal home.
+3. Access \http://localhost:8069/my/subscriptions\ to inspect subscription listings with status badges and recurring charges.
+4. Select any subscription to view plan renewal intervals and customer invoice links.
 
-To view logs for a specific service:
-```powershell
-# Odoo application logs
-docker compose logs -f web
+### Scenario B: Validating Password Policy
+1. Navigate to **Management & Config → Staff Management**.
+2. Create or edit a staff member and assign a weak password (e.g., \password123\).
+3. Observe the validation banner detailing the 5 security requirements.
 
-# PostgreSQL database logs
-docker compose logs -f db
-```
-
----
-
-## 🛑 Stopping the Environment
-
-### Stop without deleting data (Preserves database & filestore):
-```powershell
-docker compose down
-```
-
-> [!IMPORTANT]
-> The database and filestore are safely stored in named Docker volumes (`odoo-db-data` and `odoo-web-data`). Running `docker compose down` will safely shut down the containers while preserving all existing data.
-
-### ⚠️ Warning: Do NOT remove volumes accidentally
-Avoid using the `-v` / `--volumes` flag (`docker compose down -v`), as this permanently deletes PostgreSQL database volumes and uploaded files.
+### Scenario C: Verifying Audit Immutability
+1. Under **Management & Config → Audit Trail**, view logged events with their actor metadata and change diffs.
+2. Select an audit entry and click **Action → Delete**.
+3. Confirm that the system blocks the deletion with an **Access Error: Audit records are immutable**.
