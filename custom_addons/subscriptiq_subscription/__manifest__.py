@@ -42,6 +42,7 @@ Phase 4 — Subscription Management Engine:
         'product',
         'sale_management',
         'sales_team',
+        'mail',
     ],
     'data': [
         'data/subscription_data.xml',
