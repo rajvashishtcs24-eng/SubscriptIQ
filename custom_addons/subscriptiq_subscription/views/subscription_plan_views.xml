@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================================= -->
+    <!-- 1. Subscription Plan List View (Odoo 19 Native <list> Syntax)     -->
+    <!-- ================================================================= -->
+    <record id="subscriptiq_plan_view_list" model="ir.ui.view">
+        <field name="name">subscriptiq.plan.list</field>
+        <field name="model">subscriptiq.plan</field>
+        <field name="arch" type="xml">
+            <list string="Subscription Plans" sample="1">
+                <field name="name" string="Plan Name"/>
+                <field name="billing_frequency" widget="badge" decoration-info="billing_frequency == 'monthly'" decoration-success="billing_frequency == 'yearly'" decoration-warning="billing_frequency in ('daily', 'weekly')"/>
+                <field name="price" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="minimum_quantity"/>
+                <field name="available_from" optional="show"/>
+                <field name="available_until" optional="show"/>
+                <field name="renewal_enabled" widget="boolean_toggle" optional="show"/>
+                <field name="renewal_type" optional="show" invisible="not renewal_enabled"/>
+                <field name="allow_pause" optional="hide"/>
+                <field name="allow_early_close" optional="hide"/>
+                <field name="active" widget="boolean_toggle" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================================= -->
+    <!-- 2. Subscription Plan Form View                                    -->
+    <!-- ================================================================= -->
+    <record id="subscriptiq_plan_view_form" model="ir.ui.view">
+        <field name="name">subscriptiq.plan.form</field>
+        <field name="model">subscriptiq.plan</field>
+        <field name="arch" type="xml">
+            <form string="Subscription Plan">
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    
+                    <!-- Title & Header -->
+                    <div class="oe_title">
+                        <label for="name" string="Plan Name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Brightloop CRM - Professional Monthly"/>
+                        </h1>
+                    </div>
+
+                    <!-- Top Summary Grid -->
+                    <group>
+                        <group name="general_info" string="General Information">
+                            <field name="active" invisible="1"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="description" placeholder="Describe the plan inclusions, target audience, and service SLAs..."/>
+                        </group>
+                        <group name="billing_config" string="Billing Configuration">
+                            <field name="billing_frequency"/>
+                            <field name="minimum_quantity"/>
+                        </group>
+                    </group>
+
+                    <!-- Notebook with Logical Sections -->
+                    <notebook>
+                        <!-- Section 1: Products and Pricing -->
+                        <page name="products_pricing" string="Products &amp; Pricing">
+                            <field name="line_ids">
+                                <list editable="bottom" string="Plan Lines">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="product_id" options="{'no_create': True}"/>
+                                    <field name="name"/>
+                                    <field name="quantity"/>
+                                    <field name="price_unit" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="currency_id" column_invisible="True"/>
+                                    <field name="price_subtotal" widget="monetary" options="{'currency_field': 'currency_id'}" sum="Total"/>
+                                </list>
+                            </field>
+                            <group class="oe_subtotal_footer">
+                                <field name="price" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_subtotal_footer_separator"/>
+                            </group>
+                        </page>
+
+                        <!-- Section 2: Availability & Renewal -->
+                        <page name="availability_renewal" string="Availability &amp; Renewal">
+                            <group>
+                                <group name="availability" string="Availability Schedule">
+                                    <field name="available_from"/>
+                                    <field name="available_until"/>
+                                </group>
+                                <group name="renewal" string="Renewal Configuration">
+                                    <field name="renewal_enabled"/>
+                                    <field name="renewal_type" invisible="not renewal_enabled" required="renewal_enabled"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- Section 3: Lifecycle Policies -->
+                        <page name="policies" string="Lifecycle Policies">
+                            <group>
+                                <group name="closure_policy" string="Closure Policies">
+                                    <field name="auto_close"/>
+                                    <field name="allow_early_close"/>
+                                </group>
+                                <group name="pause_policy" string="Pause Policy">
+                                    <field name="allow_pause"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================================= -->
+    <!-- 3. Subscription Plan Search View                                  -->
+    <!-- ================================================================= -->
+    <record id="subscriptiq_plan_view_search" model="ir.ui.view">
+        <field name="name">subscriptiq.plan.search</field>
+        <field name="model">subscriptiq.plan</field>
+        <field name="arch" type="xml">
+            <search string="Search Subscription Plans">
+                <field name="name" string="Plan Name"/>
+                
+                <!-- Status Filters -->
+                <filter string="Active Plans" name="filter_active" domain="[('active', '=', True)]"/>
+                <filter string="Archived" name="filter_archived" domain="[('active', '=', False)]"/>
+                <separator/>
+
+                <!-- Billing Frequency Filters -->
+                <filter string="Daily" name="filter_daily" domain="[('billing_frequency', '=', 'daily')]"/>
+                <filter string="Weekly" name="filter_weekly" domain="[('billing_frequency', '=', 'weekly')]"/>
+                <filter string="Monthly" name="filter_monthly" domain="[('billing_frequency', '=', 'monthly')]"/>
+                <filter string="Yearly" name="filter_yearly" domain="[('billing_frequency', '=', 'yearly')]"/>
+                <separator/>
+
+                <!-- Renewal Filters -->
+                <filter string="Automatic Renewal" name="filter_auto_renewal" domain="[('renewal_enabled', '=', True), ('renewal_type', '=', 'automatic')]"/>
+                <filter string="Manual Renewal" name="filter_manual_renewal" domain="[('renewal_enabled', '=', True), ('renewal_type', '=', 'manual')]"/>
+                <filter string="Renewal Disabled" name="filter_renewal_disabled" domain="[('renewal_enabled', '=', False)]"/>
+
+                <!-- Group By Options -->
+                <group>
+                    <filter string="Billing Frequency" name="group_by_frequency" context="{'group_by': 'billing_frequency'}"/>
+                    <filter string="Renewal Type" name="group_by_renewal" context="{'group_by': 'renewal_type'}"/>
+                    <filter string="Company" name="group_by_company" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ================================================================= -->
+    <!-- 4. Window Action (Odoo 19 list,form view mode)                    -->
+    <!-- ================================================================= -->
+    <record id="action_subscriptiq_plans" model="ir.actions.act_window">
+        <field name="name">Subscription Plans</field>
+        <field name="res_model">subscriptiq.plan</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="subscriptiq_plan_view_search"/>
+        <field name="context">{'search_default_filter_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first subscription plan
+            </p>
+            <p>
+                Define recurring billing frequencies, subscription-eligible line items, minimum seat quantities, and renewal policies.
+            </p>
+        </field>
+    </record>
+</odoo>
