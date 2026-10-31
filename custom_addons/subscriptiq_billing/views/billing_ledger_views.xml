@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Billing Ledger List View -->
+    <record id="view_billing_ledger_tree" model="ir.ui.view">
+        <field name="name">subscriptiq.billing.ledger.tree</field>
+        <field name="model">subscriptiq.billing.ledger</field>
+        <field name="arch" type="xml">
+            <list string="Subscription Billing Ledger" create="false">
+                <field name="name"/>
+                <field name="subscription_id"/>
+                <field name="partner_id"/>
+                <field name="billing_period_start"/>
+                <field name="billing_period_end"/>
+                <field name="billing_frequency"/>
+                <field name="invoice_id"/>
+                <field name="retry_count"/>
+                <field name="ack_retry_count"/>
+                <field name="state" widget="badge" 
+                       decoration-secondary="state == 'pending'"
+                       decoration-info="state == 'processing'"
+                       decoration-warning="state == 'ack_pending'"
+                       decoration-danger="state in ('failed', 'ack_failed')"
+                       decoration-success="state == 'succeeded'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Billing Ledger Form View -->
+    <record id="view_billing_ledger_form" model="ir.ui.view">
+        <field name="name">subscriptiq.billing.ledger.form</field>
+        <field name="model">subscriptiq.billing.ledger</field>
+        <field name="arch" type="xml">
+            <form string="Subscription Billing Ledger" create="false">
+                <header>
+                    <button name="%(action_ack_retry_wizard)d" string="Retry Member 1 Acknowledgement" type="action" class="btn-primary" invisible="state not in ('ack_pending', 'ack_failed')"/>
+                    <button name="action_cancel_draft_invoice" string="Cancel Draft Invoice" type="object" class="btn-secondary" invisible="state != 'processing' and not draft_invoice_id" confirm="Are you sure you want to cancel the draft invoice and release any reservations?"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,processing,ack_pending,succeeded"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Ledger Entry"/>
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Subscription Details">
+                            <field name="subscription_id"/>
+                            <field name="partner_id"/>
+                            <field name="billing_frequency"/>
+                            <field name="billing_period_start"/>
+                            <field name="billing_period_end"/>
+                        </group>
+                        <group string="Invoicing &amp; Traceability">
+                            <field name="invoice_id"/>
+                            <field name="draft_invoice_id" invisible="not draft_invoice_id"/>
+                            <field name="discount_reservation_id"/>
+                            <field name="billing_run_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Execution &amp; Retry Diagnostics" name="diagnostics">
+                            <group>
+                                <group string="Invoice Generation Retries">
+                                    <field name="first_attempted_at"/>
+                                    <field name="succeeded_at"/>
+                                    <field name="retry_count"/>
+                                    <field name="max_retries"/>
+                                    <field name="next_retry_at"/>
+                                    <field name="last_error_message" invisible="not last_error_message"/>
+                                </group>
+                                <group string="Post-Posting Acknowledgement Retries">
+                                    <field name="acknowledged_at"/>
+                                    <field name="ack_retry_count"/>
+                                    <field name="ack_max_retries"/>
+                                    <field name="ack_retry_at"/>
+                                    <field name="ack_error_message" invisible="not ack_error_message"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View for Billing Ledger -->
+    <record id="view_billing_ledger_search" model="ir.ui.view">
+        <field name="name">subscriptiq.billing.ledger.search</field>
+        <field name="model">subscriptiq.billing.ledger</field>
+        <field name="arch" type="xml">
+            <search string="Search Billing Ledger">
+                <field name="name"/>
+                <field name="subscription_id"/>
+                <field name="partner_id"/>
+                <field name="invoice_id"/>
+                <filter name="state_succeeded" string="Succeeded" domain="[('state', '=', 'succeeded')]"/>
+                <filter name="state_pending" string="Pending" domain="[('state', '=', 'pending')]"/>
+                <filter name="state_processing" string="Processing" domain="[('state', '=', 'processing')]"/>
+                <filter name="state_failed" string="Invoice Failed" domain="[('state', '=', 'failed')]"/>
+                <filter name="state_ack_pending" string="Ack Pending" domain="[('state', '=', 'ack_pending')]"/>
+                <filter name="state_ack_failed" string="Ack Failed" domain="[('state', '=', 'ack_failed')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
+                    <filter string="Frequency" name="group_by_freq" context="{'group_by': 'billing_frequency'}"/>
+                    <filter string="Customer" name="group_by_partner" context="{'group_by': 'partner_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action for Billing Ledger -->
+    <record id="action_billing_ledger" model="ir.actions.act_window">
+        <field name="name">Billing Ledger</field>
+        <field name="res_model">subscriptiq.billing.ledger</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_billing_ledger_search"/>
+    </record>
+</odoo>

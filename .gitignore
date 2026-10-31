@@ -1,0 +1,57 @@
+# Environment variables & secrets
+.env
+.env.local
+*.env
+
+# Python byte code and cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Logs
+*.log
+logs/
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Database dumps & backups
+*.sql
+*.sql.gz
+*.dump
+*.dump.gz
+*.bak
+
+# Odoo local filestore & session data (host-mounted)
+filestore/
+sessions/
+/data/
+
+# Testing & Coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
