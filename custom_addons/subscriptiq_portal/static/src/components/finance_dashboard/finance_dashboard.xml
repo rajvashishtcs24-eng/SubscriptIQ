@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="subscription_platform.FinanceDashboardTemplate" owl="1">
+        <div class="o_subscription_dashboard p-4 bg-light overflow-auto h-100">
+            <div class="card shadow-sm p-3 mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <label>Start Date</label>
+                        <input type="date" name="date_from" class="form-control" t-on-change="onFilterChange"/>
+                    </div>
+                    <div class="col-md-4">
+                        <label>End Date</label>
+                        <input type="date" name="date_to" class="form-control" t-on-change="onFilterChange"/>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button class="btn btn-primary w-100" t-on-click="loadDashboardMetrics">
+                            Refresh Metrics
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <t t-if="state.loading">
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            </t>
+
+            <t t-else="">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="card shadow-sm p-3 border-left-primary">
+                            <span class="text-muted text-uppercase">Active Subscriptions</span>
+                            <h2 class="mt-2 text-primary"><t t-esc="state.kpis.active_subscriptions || 0"/></h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card shadow-sm p-3 border-left-success">
+                            <span class="text-muted text-uppercase">Revenue Received</span>
+                            <h2 class="mt-2 text-success"><t t-esc="formatCurrency(state.kpis.revenue_collected)"/></h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card shadow-sm p-3 border-left-warning">
+                            <span class="text-muted text-uppercase">Outstanding Invoices</span>
+                            <h2 class="mt-2 text-warning"><t t-esc="formatCurrency(state.kpis.outstanding_amount)"/></h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card shadow-sm p-3 border-left-danger">
+                            <span class="text-muted text-uppercase">Overdue Invoices</span>
+                            <h2 class="mt-2 text-danger"><t t-esc="formatCurrency(state.kpis.overdue_amount)"/></h2>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>

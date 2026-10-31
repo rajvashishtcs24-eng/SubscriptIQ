@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_subscription_finance_dashboard" model="ir.actions.client">
+        <field name="name">Finance Dashboard</field>
+        <field name="tag">action_subscription_finance_dashboard_client</field>
+    </record>
+
+    <!-- Root Menu -->
+    <menuitem id="menu_subscription_root"
+              name="Subscriptions"
+              groups="brightloop_base.group_subscriptiq_staff"
+              sequence="10"/>
+
+    <!-- Operational Dashboard -->
+    <menuitem id="menu_sub_dashboard"
+              name="Dashboard"
+              parent="menu_subscription_root"
+              action="action_subscription_finance_dashboard"
+              sequence="1"/>
+
+    <!-- Management & Config (Admin only) -->
+    <menuitem id="menu_sub_admin_controls"
+              name="Management &amp; Config"
+              parent="menu_subscription_root"
+              groups="brightloop_base.group_subscriptiq_admin"
+              sequence="30"/>
+
+    <menuitem id="menu_sub_staff_mgmt"
+              name="Staff Management"
+              parent="menu_sub_admin_controls"
+              action="action_subscription_staff_members"
+              sequence="1"/>
+
+    <menuitem id="menu_sub_audit_logs"
+              name="Audit Trail"
+              parent="menu_sub_admin_controls"
+              action="action_subscription_audit_log"
+              sequence="2"/>
+</odoo>

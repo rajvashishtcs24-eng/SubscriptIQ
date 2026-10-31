@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- 1. Home Portal Entry Card -->
+    <template id="portal_my_home_subscription" name="Show Subscriptions" inherit_id="portal.portal_my_home" priority="20">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'fa fa-repeat fa-2x text-primary'"/>
+                <t t-set="title">Subscriptions</t>
+                <t t-set="text">Follow, manage, or renew your subscriptions</t>
+                <t t-set="url" t-value="'/my/subscriptions'"/>
+                <t t-set="placeholder_count" t-value="'subscription_count'"/>
+                <t t-set="show_count" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- 2. Subscriptions List View -->
+    <template id="portal_my_subscriptions" name="My Subscriptions">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <div class="o_portal_my_subscriptions container mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>My Subscriptions</h3>
+                </div>
+                <t t-if="not subscriptions">
+                    <p class="alert alert-warning">There are currently no active subscriptions for your account.</p>
+                </t>
+                <t t-if="subscriptions">
+                    <div class="table-responsive bg-white rounded shadow-sm">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Reference</th>
+                                    <th>Plan</th>
+                                    <th>Start Date</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Recurring Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="subscriptions" t-as="sub">
+                                    <td>
+                                        <a t-attf-href="/my/subscription/#{sub['id']}" class="fw-bold text-decoration-none">
+                                            <t t-out="sub['name']"/>
+                                        </a>
+                                    </td>
+                                    <td><span t-out="sub['plan_name']"/></td>
+                                    <td><span t-out="sub['start_date']"/></td>
+                                    <td><span class="badge rounded-pill text-bg-success" t-out="sub['state']"/></td>
+                                    <td class="text-end"><span class="fw-bold" t-out="sub['recurring_amount']"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+
+    <!-- 3. Subscription Detail View -->
+    <template id="portal_my_subscription_detail" name="Subscription Details">
+        <t t-call="portal.portal_layout">
+            <div class="container my-4">
+                <div class="mb-3">
+                    <a href="/my/subscriptions" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa fa-arrow-left me-1"/> Back to Subscriptions
+                    </a>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
+                        <h4 class="mb-0 text-dark">
+                            <span t-out="subscription['name']"/>
+                        </h4>
+                        <span class="badge rounded-pill text-bg-success fs-6" t-out="subscription['state']"/>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <h6 class="text-muted text-uppercase fw-semibold mb-2">Subscription Information</h6>
+                                <p class="mb-1"><strong>Plan:</strong> <span t-out="subscription['plan_name']"/></p>
+                                <p class="mb-1"><strong>Billing Frequency:</strong> <span t-out="subscription['billing_period']"/></p>
+                                <p class="mb-1"><strong>Start Date:</strong> <span t-out="subscription['start_date']"/></p>
+                                <p class="mb-1"><strong>Next Renewal Date:</strong> <span t-out="subscription['next_invoice_date']"/></p>
+                            </div>
+                            <div class="col-md-6 border-start-md">
+                                <h6 class="text-muted text-uppercase fw-semibold mb-2">Pricing Breakdown</h6>
+                                <div class="p-3 bg-light rounded">
+                                    <p class="text-muted mb-1">Recurring Amount:</p>
+                                    <h2 class="text-primary mb-0" t-out="subscription['recurring_amount']"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4"/>
+
+                        <div>
+                            <h6 class="text-muted text-uppercase fw-semibold mb-2">Plan Details</h6>
+                            <p class="text-secondary" t-out="subscription['description']"/>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-top d-flex gap-2">
+                            <a href="/my/invoices" class="btn btn-outline-primary">
+                                <i class="fa fa-file-text-o me-1"/> View Invoices
+                            </a>
+                            <a href="/my/security" class="btn btn-outline-secondary">
+                                <i class="fa fa-lock me-1"/> Manage Security
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

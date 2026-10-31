@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_subscription_staff_members" model="ir.actions.act_window">
+        <field name="name">Staff Management</field>
+        <field name="res_model">res.users</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_subscription_staff', '=', True)]</field>
+        <field name="context" eval="{'default_groups_id': [(4, ref('brightloop_base.group_subscriptiq_staff'))]}"/>
+    </record>
+
+    <record id="view_subscription_staff_tree" model="ir.ui.view">
+        <field name="name">res.users.staff.list</field>
+        <field name="model">res.users</field>
+        <field name="arch" type="xml">
+            <list string="Staff Directory" decoration-muted="active == False">
+                <field name="name"/>
+                <field name="login"/>
+                <field name="is_subscription_admin" string="Is Admin"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_subscription_staff_form" model="ir.ui.view">
+        <field name="name">res.users.staff.form</field>
+        <field name="model">res.users</field>
+        <field name="arch" type="xml">
+            <form string="Staff Member">
+                <header>
+                    <button name="action_reset_password" string="Send Reset Password" type="object" class="btn-secondary"/>
+                </header>
+                <sheet>
+                    <field name="active" invisible="1"/>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active == True"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" required="1" placeholder="Staff Name"/></h1>
+                        <label for="login" string="Email / Login Identifier"/>
+                        <h2><field name="login" required="1" placeholder="staff@example.com"/></h2>
+                    </div>
+                    <group>
+                        <group string="Role Allocation">
+                            <field name="groups_id" widget="many2many_tags" 
+                                   options="{'no_create': True}" 
+                                   domain="[('category_id', '=', %(brightloop_base.module_category_subscriptiq)d)]"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

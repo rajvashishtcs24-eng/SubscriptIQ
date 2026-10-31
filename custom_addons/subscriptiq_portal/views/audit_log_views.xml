@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_subscription_audit_log" model="ir.actions.act_window">
+        <field name="name">Audit Trail</field>
+        <field name="res_model">subscription.audit.log</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_subscription_audit_log_tree" model="ir.ui.view">
+        <field name="name">subscription.audit.log.list</field>
+        <field name="model">subscription.audit.log</field>
+        <field name="arch" type="xml">
+            <list string="Audit Trail" create="false" edit="false" delete="false">
+                <field name="create_date" string="Timestamp"/>
+                <field name="user_id"/>
+                <field name="action"/>
+                <field name="res_model"/>
+                <field name="record_name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_subscription_audit_log_form" model="ir.ui.view">
+        <field name="name">subscription.audit.log.form</field>
+        <field name="model">subscription.audit.log</field>
+        <field name="arch" type="xml">
+            <form string="Audit Log Entry" create="false" edit="false" delete="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="create_date" string="Timestamp"/>
+                            <field name="user_id"/>
+                            <field name="action"/>
+                        </group>
+                        <group>
+                            <field name="res_model"/>
+                            <field name="res_id"/>
+                            <field name="record_name"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Payload Delta">
+                            <field name="metadata_json" widget="ace" options="{'mode': 'json'}"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>
