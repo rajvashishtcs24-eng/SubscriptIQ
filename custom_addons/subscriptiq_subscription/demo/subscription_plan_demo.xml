@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- ============================================================= -->
+        <!-- Plan 1: Basic Monthly Plan                                    -->
+        <!-- ============================================================= -->
+        <record id="demo_plan_basic_monthly" model="subscriptiq.plan">
+            <field name="name">Brightloop CRM - Basic Monthly</field>
+            <field name="description">Entry-level monthly CRM plan designed for individual practitioners and micro-businesses. Includes standard CRM feature set.</field>
+            <field name="billing_frequency">monthly</field>
+            <field name="minimum_quantity">1.0</field>
+            <field name="renewal_enabled" eval="True"/>
+            <field name="renewal_type">manual</field>
+            <field name="auto_close" eval="True"/>
+            <field name="allow_early_close" eval="True"/>
+            <field name="allow_pause" eval="False"/>
+            <field name="available_from">2026-01-01</field>
+        </record>
+
+        <!-- ============================================================= -->
+        <!-- Plan 2: Professional Monthly Plan                             -->
+        <!-- ============================================================= -->
+        <record id="demo_plan_professional_monthly" model="subscriptiq.plan">
+            <field name="name">Brightloop CRM - Professional Monthly</field>
+            <field name="description">Mid-tier monthly CRM plan for growing teams. Features full Odoo integration, advanced lead routing, and pipeline automation.</field>
+            <field name="billing_frequency">monthly</field>
+            <field name="minimum_quantity">5.0</field>
+            <field name="renewal_enabled" eval="True"/>
+            <field name="renewal_type">automatic</field>
+            <field name="auto_close" eval="False"/>
+            <field name="allow_early_close" eval="True"/>
+            <field name="allow_pause" eval="True"/>
+            <field name="available_from">2026-01-01</field>
+        </record>
+
+        <!-- ============================================================= -->
+        <!-- Plan 3: Enterprise Yearly Plan                                -->
+        <!-- ============================================================= -->
+        <record id="demo_plan_enterprise_yearly" model="subscriptiq.plan">
+            <field name="name">Brightloop CRM - Enterprise Yearly</field>
+            <field name="description">Premium annual subscription plan for enterprises with dedicated cloud infrastructure, 99.9% uptime SLA, and 24/7 priority engineering support.</field>
+            <field name="billing_frequency">yearly</field>
+            <field name="minimum_quantity">10.0</field>
+            <field name="renewal_enabled" eval="True"/>
+            <field name="renewal_type">automatic</field>
+            <field name="auto_close" eval="False"/>
+            <field name="allow_early_close" eval="False"/>
+            <field name="allow_pause" eval="True"/>
+            <field name="available_from">2026-01-01</field>
+        </record>
+
+        <!-- Initialize plan line attachments with Brightloop CRM variants -->
+        <function model="subscriptiq.plan" name="_init_demo_plans"/>
+    </data>
+</odoo>

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================================= -->
+    <!-- sale.order Form View Inheritance                                   -->
+    <!-- Adds subscription_plan_id field and Populate Lines button          -->
+    <!-- Parent: sale.view_order_form (Odoo 19 core sale module)            -->
+    <!-- ================================================================= -->
+    <record id="view_sale_order_form_inherit_subscriptiq" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.subscriptiq</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Insert subscription_plan_id after the sale_order_template_id field
+                 (provided by sale_management). We use a safe fallback XPath:
+                 if sale_order_template_id is not present (e.g. sale_management
+                 is not installed), the field is inserted before payment_term_id. -->
+            <xpath expr="//field[@name='payment_term_id']" position="before">
+                <field name="subscription_plan_id"
+                       widget="many2one"
+                       options="{'no_create': True}"
+                       readonly="state not in ['draft', 'sent']"
+                />
+                <field name="is_subscription_quotation" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ================================================================= -->
+    <!-- sale.order Form View — "Populate Lines" Button                     -->
+    <!-- Inject button in the statusbar/button area of the quotation form  -->
+    <!-- ================================================================= -->
+    <record id="view_sale_order_form_button_subscriptiq" model="ir.ui.view">
+        <field name="name">sale.order.form.button.subscriptiq</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_populate_lines_from_plan"
+                        type="object"
+                        string="Populate from Plan"
+                        icon="fa-list-ul"
+                        class="oe_stat_button"
+                        invisible="not subscription_plan_id"
+                        help="Copy product lines from the linked subscription plan into this quotation."
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ================================================================= -->
+    <!-- sale.order List View Inheritance (Quotation list)                 -->
+    <!-- Adds is_subscription_quotation column                              -->
+    <!-- Parent: sale.view_quotation_tree                                   -->
+    <!-- ================================================================= -->
+    <record id="view_sale_order_list_inherit_subscriptiq" model="ir.ui.view">
+        <field name="name">sale.order.list.inherit.subscriptiq</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_quotation_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="subscription_plan_id" optional="hide"/>
+                <field name="is_subscription_quotation" optional="hide" widget="boolean_toggle"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ================================================================= -->
+    <!-- sale.order Search View Inheritance                                 -->
+    <!-- Adds Subscription Quotation filter and Subscription Plan groupby  -->
+    <!-- Parent: sale.view_sales_order_filter                               -->
+    <!-- ================================================================= -->
+    <record id="view_sale_order_search_inherit_subscriptiq" model="ir.ui.view">
+        <field name="name">sale.order.search.inherit.subscriptiq</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sales_order_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='my_sale_orders_filter']" position="after">
+                <separator/>
+                <filter
+                    name="filter_subscription_quotations"
+                    string="Subscription Quotations"
+                    domain="[('is_subscription_quotation', '=', True)]"
+                />
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter
+                    name="group_by_subscription_plan"
+                    string="Subscription Plan"
+                    context="{'group_by': 'subscription_plan_id'}"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ================================================================= -->
+    <!-- sale.order.template Form View Inheritance                          -->
+    <!-- Adds subscription_plan_id field to quotation templates             -->
+    <!-- Parent: sale_management.sale_order_template_view_form              -->
+    <!-- ================================================================= -->
+    <record id="view_sale_order_template_form_inherit_subscriptiq" model="ir.ui.view">
+        <field name="name">sale.order.template.form.inherit.subscriptiq</field>
+        <field name="model">sale.order.template</field>
+        <field name="inherit_id" ref="sale_management.sale_order_template_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='number_of_days']" position="before">
+                <field name="subscription_plan_id"
+                       widget="many2one"
+                       options="{'no_create': True}"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ================================================================= -->
+    <!-- Dedicated Subscription Quotations Window Action                    -->
+    <!-- Filtered view of sale.order showing only subscription quotations   -->
+    <!-- ================================================================= -->
+    <record id="action_subscriptiq_subscription_quotations" model="ir.actions.act_window">
+        <field name="name">Subscription Quotations</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_subscription_quotation', '=', True)]</field>
+        <field name="context">{
+            'default_is_subscription_quotation': True,
+            'search_default_filter_subscription_quotations': 1
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first subscription quotation
+            </p>
+            <p>
+                Link a subscription plan to a standard Odoo quotation to
+                automatically populate product lines and track recurring commitments.
+            </p>
+        </field>
+    </record>
+</odoo>

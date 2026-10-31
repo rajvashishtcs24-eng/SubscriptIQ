@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================================= -->
+    <!-- 1. Subscription List View                                          -->
+    <!-- ================================================================= -->
+    <record id="subscriptiq_subscription_view_list" model="ir.ui.view">
+        <field name="name">subscriptiq.subscription.list</field>
+        <field name="model">subscriptiq.subscription</field>
+        <field name="arch" type="xml">
+            <list string="Subscriptions" sample="1"
+                  decoration-info="state == 'quotation'"
+                  decoration-warning="state == 'paused'"
+                  decoration-success="state == 'active'"
+                  decoration-muted="state == 'closed'">
+                <field name="name" string="Subscription #"/>
+                <field name="partner_id" string="Customer"/>
+                <field name="plan_id" string="Plan"/>
+                <field name="start_date"/>
+                <field name="end_date" optional="show"/>
+                <field name="next_billing_date"/>
+                <field name="billing_frequency" widget="badge"
+                       decoration-info="billing_frequency == 'monthly'"
+                       decoration-success="billing_frequency == 'yearly'"
+                       decoration-warning="billing_frequency in ('daily','weekly')"/>
+                <field name="amount_total" widget="monetary" options="{'currency_field': 'currency_id'}" sum="Total"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="state" widget="badge"
+                       decoration-info="state in ('draft','quotation')"
+                       decoration-primary="state == 'confirmed'"
+                       decoration-success="state == 'active'"
+                       decoration-warning="state == 'paused'"
+                       decoration-muted="state == 'closed'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================================= -->
+    <!-- 2. Subscription Form View                                          -->
+    <!-- ================================================================= -->
+    <record id="subscriptiq_subscription_view_form" model="ir.ui.view">
+        <field name="name">subscriptiq.subscription.form</field>
+        <field name="model">subscriptiq.subscription</field>
+        <field name="arch" type="xml">
+            <form string="Subscription">
+                <header>
+                    <!-- Lifecycle Action Buttons -->
+                    <button name="action_activate" type="object" string="Activate"
+                            class="oe_highlight"
+                            invisible="state != 'confirmed'"
+                            confirm="Activate this subscription? This will start billing from the start date."/>
+                    <button name="action_pause" type="object" string="Pause"
+                            invisible="state != 'active'"/>
+                    <button name="action_resume" type="object" string="Resume"
+                            class="oe_highlight"
+                            invisible="state != 'paused'"/>
+                    <button name="action_renew" type="object" string="Renew"
+                            invisible="state not in ('active', 'confirmed')"/>
+                    <button name="action_close" type="object" string="Close"
+                            invisible="state not in ('active', 'paused', 'confirmed')"
+                            confirm="Close this subscription? This action cannot be undone."/>
+                    <!-- Statusbar -->
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,quotation,confirmed,active,paused,closed"
+                           readonly="1"/>
+                </header>
+                <sheet>
+                    <!-- Smart Buttons -->
+                    <div name="button_box" class="oe_button_box">
+                        <button name="action_view_sale_order" type="object"
+                                class="oe_stat_button" icon="fa-file-text-o"
+                                invisible="not sale_order_id">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Quotation</span>
+                            </div>
+                        </button>
+                        <button name="action_view_events" type="object"
+                                class="oe_stat_button" icon="fa-history">
+                            <field name="event_count" widget="statinfo" string="Events"/>
+                        </button>
+                    </div>
+
+                    <!-- Title -->
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+
+                    <notebook>
+                        <!-- Page 1: General Information -->
+                        <page name="general_info" string="General Information">
+                            <group>
+                                <group name="customer_info" string="Customer">
+                                    <field name="partner_id"
+                                           readonly="state not in ('draft', 'quotation')"/>
+                                    <field name="company_id" groups="base.group_multi_company"
+                                           options="{'no_create': True}"/>
+                                    <field name="currency_id" options="{'no_create': True}"/>
+                                    <field name="sale_order_id" readonly="1"/>
+                                </group>
+                                <group name="plan_info" string="Plan">
+                                    <field name="plan_id" options="{'no_create': True}"
+                                           readonly="state not in ('draft', 'quotation')"/>
+                                    <field name="payment_term_id" options="{'no_create': True}"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- Page 2: Subscription Details (Dates) -->
+                        <page name="sub_details" string="Subscription Details">
+                            <group>
+                                <group name="dates" string="Dates">
+                                    <field name="start_date"/>
+                                    <field name="end_date"/>
+                                    <field name="next_billing_date"/>
+                                </group>
+                                <group name="billing_config" string="Billing Configuration">
+                                    <field name="billing_frequency"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- Page 3: Subscription Lines -->
+                        <page name="lines" string="Subscription Lines">
+                            <field name="line_ids">
+                                <list editable="bottom" string="Subscription Lines">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="product_id" options="{'no_create': True}"/>
+                                    <field name="name"/>
+                                    <field name="quantity"/>
+                                    <field name="price_unit" widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
+                                    <field name="discount"/>
+                                    <field name="tax_ids" widget="many2many_tags"/>
+                                    <field name="currency_id" column_invisible="True"/>
+                                    <field name="price_subtotal" widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"
+                                           sum="Subtotal"/>
+                                    <field name="price_total" widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"
+                                           optional="show"/>
+                                </list>
+                            </field>
+                            <group class="oe_subtotal_footer">
+                                <field name="amount_total" widget="monetary"
+                                       options="{'currency_field': 'currency_id'}"
+                                       class="oe_subtotal_footer_separator"/>
+                            </group>
+                        </page>
+
+                        <!-- Page 4: Renewal and Policies -->
+                        <page name="renewal_policies" string="Renewal &amp; Policies">
+                            <group>
+                                <group name="renewal" string="Renewal Configuration (Snapshot)">
+                                    <field name="renewal_enabled"/>
+                                    <field name="renewal_type"
+                                           invisible="not renewal_enabled"/>
+                                    <field name="auto_close"/>
+                                </group>
+                                <group name="policies" string="Lifecycle Policies (Snapshot)">
+                                    <field name="allow_early_close"/>
+                                    <field name="allow_pause"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- Page 5: Event History -->
+                        <page name="events" string="Event History">
+                            <field name="event_ids" readonly="1">
+                                <list string="Events" create="0" edit="0" delete="0">
+                                    <field name="event_date"/>
+                                    <field name="event_type" widget="badge"
+                                           decoration-success="event_type in ('activated','billing_succeeded','resumed','renewed')"
+                                           decoration-warning="event_type in ('paused',)"
+                                           decoration-danger="event_type == 'closed'"
+                                           decoration-info="event_type in ('created','quotation_created','confirmed')"/>
+                                    <field name="previous_state"/>
+                                    <field name="new_state"/>
+                                    <field name="user_id"/>
+                                    <field name="reason"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================================= -->
+    <!-- 3. Subscription Search View                                        -->
+    <!-- ================================================================= -->
+    <record id="subscriptiq_subscription_view_search" model="ir.ui.view">
+        <field name="name">subscriptiq.subscription.search</field>
+        <field name="model">subscriptiq.subscription</field>
+        <field name="arch" type="xml">
+            <search string="Search Subscriptions">
+                <field name="name" string="Subscription #"/>
+                <field name="partner_id" string="Customer"/>
+                <field name="plan_id" string="Plan"/>
+
+                <!-- State Filters -->
+                <filter string="Draft" name="filter_draft" domain="[('state','=','draft')]"/>
+                <filter string="Quotation" name="filter_quotation" domain="[('state','=','quotation')]"/>
+                <filter string="Confirmed" name="filter_confirmed" domain="[('state','=','confirmed')]"/>
+                <filter string="Active" name="filter_active" domain="[('state','=','active')]"/>
+                <filter string="Paused" name="filter_paused" domain="[('state','=','paused')]"/>
+                <filter string="Closed" name="filter_closed" domain="[('state','=','closed')]"/>
+                <separator/>
+
+                <!-- Operational Filters -->
+                <filter string="Due for Billing" name="filter_due_billing"
+                        domain="[('state','=','active'),('next_billing_date','&lt;=', context_today())]"/>
+                <filter string="Expiring This Month" name="filter_expiring"
+                        domain="[
+                            ('state','=','active'),
+                            ('end_date','!=',False),
+                            ('end_date','&lt;=', (context_today() + relativedelta(months=1)).strftime('%Y-%m-%d'))
+                        ]"/>
+
+                <!-- Group By -->
+                <group>
+                    <filter string="Customer" name="group_by_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Plan" name="group_by_plan" context="{'group_by': 'plan_id'}"/>
+                    <filter string="Billing Frequency" name="group_by_frequency" context="{'group_by': 'billing_frequency'}"/>
+                    <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
+                    <filter string="Company" name="group_by_company" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ================================================================= -->
+    <!-- 4. Event History List View                                         -->
+    <!-- ================================================================= -->
+    <record id="subscriptiq_subscription_event_view_list" model="ir.ui.view">
+        <field name="name">subscriptiq.subscription.event.list</field>
+        <field name="model">subscriptiq.subscription.event</field>
+        <field name="arch" type="xml">
+            <list string="Subscription Events" create="0" edit="0" delete="0">
+                <field name="event_date"/>
+                <field name="subscription_id"/>
+                <field name="event_type" widget="badge"
+                       decoration-success="event_type in ('activated','billing_succeeded','resumed','renewed')"
+                       decoration-warning="event_type == 'paused'"
+                       decoration-danger="event_type == 'closed'"
+                       decoration-info="event_type in ('created','quotation_created','confirmed')"/>
+                <field name="previous_state"/>
+                <field name="new_state"/>
+                <field name="user_id"/>
+                <field name="reason"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================================= -->
+    <!-- 5. Window Actions                                                  -->
+    <!-- ================================================================= -->
+    <record id="action_subscriptiq_subscriptions" model="ir.actions.act_window">
+        <field name="name">Subscriptions</field>
+        <field name="res_model">subscriptiq.subscription</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="subscriptiq_subscription_view_search"/>
+        <field name="context">{'search_default_filter_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No subscriptions yet
+            </p>
+            <p>
+                Create a subscription quotation from the Quotations menu,
+                populate it with a subscription plan, confirm it, and activate it here.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_subscriptiq_all_subscriptions" model="ir.actions.act_window">
+        <field name="name">All Subscriptions</field>
+        <field name="res_model">subscriptiq.subscription</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="subscriptiq_subscription_view_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No subscriptions found.</p>
+        </field>
+    </record>
+
+    <!-- sale.order form: add subscription smart button -->
+    <record id="view_sale_order_form_subscription_button" model="ir.ui.view">
+        <field name="name">sale.order.form.subscription.button.subscriptiq</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_subscription" type="object"
+                        class="oe_stat_button" icon="fa-refresh"
+                        invisible="not subscription_id">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">Subscription</span>
+                    </div>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- sale.order form: add Prepare Subscription button -->
+    <record id="view_sale_order_form_prepare_sub_button" model="ir.ui.view">
+        <field name="name">sale.order.form.prepare.sub.subscriptiq</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_confirm']" position="after">
+                <button name="action_prepare_subscription" type="object"
+                        string="Prepare Subscription"
+                        invisible="not is_subscription_quotation or state not in ['draft','sent'] or subscription_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- sale.order form: show subscription_id field -->
+    <record id="view_sale_order_form_sub_field" model="ir.ui.view">
+        <field name="name">sale.order.form.sub.field.subscriptiq</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='subscription_plan_id']" position="after">
+                <field name="subscription_id" readonly="1"
+                       invisible="not subscription_id"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
