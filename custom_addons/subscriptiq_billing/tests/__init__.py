@@ -12,3 +12,4 @@ from . import test_acknowledgement
 from . import test_idempotency
 from . import test_account_integration
 from . import test_member1_interface
+from . import test_subscription_integration_boundaries
