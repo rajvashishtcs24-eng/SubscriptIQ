@@ -27,7 +27,7 @@ class TestDiscountReservation(BillingTestCommon):
             'partner_id': self.partner.id,
             'billing_period_start': date(2026, 11, 1),
             'billing_period_end': date(2026, 11, 30),
-            'state': 'in_progress',
+            'state': 'processing',
         })
 
     def test_reservation_snapshots_values(self):

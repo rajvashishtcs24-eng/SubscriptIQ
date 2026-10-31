@@ -56,7 +56,7 @@ class BillingLedger(models.Model):
     state = fields.Selection(
         selection=[
             ('pending', 'Pending'),
-            ('in_progress', 'In Progress'),
+            ('processing', 'Processing'),
             ('failed', 'Failed'),
             ('ack_pending', 'Acknowledgement Pending'),
             ('ack_failed', 'Acknowledgement Failed'),
@@ -66,7 +66,7 @@ class BillingLedger(models.Model):
         required=True,
         default='pending',
         index=True,
-        help="Six-state machine: pending -> in_progress -> ack_pending -> succeeded (or failed / ack_failed).",
+        help="Six-state machine: pending -> processing -> ack_pending -> succeeded (or failed / ack_failed).",
     )
     invoice_id = fields.Many2one(
         comodel_name='account.move',
@@ -142,15 +142,19 @@ class BillingLedger(models.Model):
             else:
                 record.name = _("Draft Ledger")
 
-    def action_mark_in_progress(self):
-        """Sets ledger to in_progress before invoice processing."""
+    def action_mark_processing(self):
+        """Sets ledger to processing before invoice processing."""
         for record in self:
             if record.state in ('succeeded', 'ack_pending'):
                 raise UserError(_("Cannot process an already invoiced ledger entry."))
-            vals = {'state': 'in_progress'}
+            vals = {'state': 'processing'}
             if not record.first_attempted_at:
                 vals['first_attempted_at'] = fields.Datetime.now()
             record.write(vals)
+
+    def action_mark_in_progress(self):
+        """Backward-compatible alias for action_mark_processing."""
+        return self.action_mark_processing()
 
     def action_mark_ack_pending(self, invoice_id):
         """Called upon successful invoice posting commit inside savepoint."""
@@ -207,7 +211,7 @@ class BillingLedger(models.Model):
         without incrementing system failure retry count.
         """
         for record in self:
-            if record.state != 'in_progress' and not record.draft_invoice_id:
+            if record.state != 'processing' and not record.draft_invoice_id:
                 continue
 
             if record.discount_reservation_id:

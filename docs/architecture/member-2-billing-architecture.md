@@ -368,10 +368,10 @@ STAGE 3 ── PER-SUBSCRIPTION LOOP  [each iteration in its own SAVEPOINT]
   │     ├─ state=succeeded → SKIP → BillingRunItem(state=skipped, reason=already_billed)
   │     ├─ state=ack_pending or state=ack_failed → SKIP to STAGE 3.11 (acknowledgement-only retry)
   │     ├─ state=pending or state=failed → REUSE record             [invoice retry — T-22]
-  │     └─ state=in_progress → SKIP → BillingRunItem(state=skipped, reason=concurrent)
+  │     └─ state=processing → SKIP → BillingRunItem(state=skipped, reason=concurrent)
   │
   ├─ STAGE 3.4 ── MARK LEDGER IN-PROGRESS
-  │     ├─ ledger.state = in_progress
+  │     ├─ ledger.state = processing
   │     └─ FAILURE → ROLLBACK SAVEPOINT → BillingRunItem(state=skipped, reason=concurrent)
   │
   ├─ STAGE 3.5 ── EVALUATE AND RESERVE DISCOUNT
@@ -474,7 +474,7 @@ The ledger now has six states to cleanly separate invoice lifecycle from acknowl
                   └────┬─────┘
                        │ engine acquires row lock
                   ┌────▼──────────┐
-                  │  in_progress  │  ← row-locked during active processing
+                  │  processing  │  ← row-locked during active processing
                   └──┬────────┬───┘
                      │        │
          ┌───────────▼─┐    ┌─▼────────────────┐
@@ -487,7 +487,7 @@ The ledger now has six states to cleanly separate invoice lifecycle from acknowl
             │      │  ack fails       │  retry cron
             │   ┌──▼───────────┐      │
             │   │  ack_failed  │   ┌──▼─────────────┐
-            │   │ (ack-only    │   │  in_progress   │
+            │   │ (ack-only    │   │  processing   │
             │   │  retry ♻️)   │   │  (on retry)    │
             │   └──┬───────────┘   └────────────────┘
             │      │ ack retry succeeds
@@ -501,7 +501,7 @@ The ledger now has six states to cleanly separate invoice lifecycle from acknowl
 | State | Meaning | Invoice exists? | Retryable? |
 |---|---|---|---|
 | `pending` | Ledger created; no billing attempt yet | No | Yes — first attempt |
-| `in_progress` | Engine is actively processing this subscription | No (being created) | Implicit |
+| `processing` | Engine is actively processing this subscription | No (being created) | Implicit |
 | `failed` | Invoice creation or posting failed; reservation released | No | Yes — invoice retry cron |
 | `ack_pending` | Invoice is posted and committed; waiting for Member 1 acknowledgement | Yes — posted | Yes — ack retry only |
 | `ack_failed` | Acknowledgement failed; invoice preserved; retry pending | Yes — posted | Yes — ack retry cron |
@@ -511,15 +511,15 @@ The ledger now has six states to cleanly separate invoice lifecycle from acknowl
 
 | From | To | Trigger |
 |---|---|---|
-| `pending` | `in_progress` | Engine acquires SELECT FOR UPDATE row lock |
-| `in_progress` | `failed` | Any savepoint rollback before stage 3.10 |
-| `in_progress` | `in_progress` | Draft invoice cancelled before posting |
-| `in_progress` | `ack_pending` | Savepoint committed after stage 3.10 |
+| `pending` | `processing` | Engine acquires SELECT FOR UPDATE row lock |
+| `processing` | `failed` | Any savepoint rollback before stage 3.10 |
+| `processing` | `processing` | Draft invoice cancelled before posting |
+| `processing` | `ack_pending` | Savepoint committed after stage 3.10 |
 | `ack_pending` | `succeeded` | `register_billing_success` call succeeds |
 | `ack_pending` | `ack_failed` | `register_billing_success` call fails |
 | `ack_failed` | `succeeded` | Acknowledgement retry succeeds |
 | `ack_failed` | `ack_failed` | Acknowledgement retry fails again (count increments) |
-| `failed` | `in_progress` | Invoice retry cron picks up ledger |
+| `failed` | `processing` | Invoice retry cron picks up ledger |
 | `succeeded` | — | **No exit. Terminal.** |
 
 ### Cancelled draft invoice behavior (T-21)
@@ -650,7 +650,7 @@ A ledger in `ack_pending` or `ack_failed` state has a **committed, posted invoic
 | Cron | Processes states | Does NOT process |
 |---|---|---|
 | Invoice retry cron | `failed` | `ack_pending`, `ack_failed`, `succeeded` |
-| Ack retry cron | `ack_pending`, `ack_failed` | `failed`, `pending`, `in_progress`, `succeeded` |
+| Ack retry cron | `ack_pending`, `ack_failed` | `failed`, `pending`, `processing`, `succeeded` |
 
 ---
 

@@ -123,7 +123,7 @@ The **central idempotency anchor and state machine**. One record per `(subscript
 | `billing_period_start` | Date | Yes | — | Inclusive period start |
 | `billing_period_end` | Date | Yes | — | Inclusive period end |
 | `billing_frequency` | Selection | Yes | — | `daily`, `weekly`, `monthly`, `yearly` |
-| `state` | Selection | Yes | `pending` | `pending`, `in_progress`, `failed`, `ack_pending`, `ack_failed`, `succeeded` |
+| `state` | Selection | Yes | `pending` | `pending`, `processing`, `failed`, `ack_pending`, `ack_failed`, `succeeded` |
 | `invoice_id` | Many2one → `account.move` | No | — | Populated after stage 3.10 commit |
 | `draft_invoice_id` | Many2one → `account.move` | No | — | Holds draft during posting; cleared on success or rollback |
 | `discount_reservation_id` | Many2one → `subscriptiq.discount.reservation` | No | — | Active reservation |
@@ -146,7 +146,7 @@ The **central idempotency anchor and state machine**. One record per `(subscript
               pending
                  │  engine acquires row lock
                  ▼
-           in_progress
+           processing
             │         │
      (failure)     (stage 3.10 commit)
             │         │
@@ -156,7 +156,7 @@ The **central idempotency anchor and state machine**. One record per `(subscript
       (retry cron) (ack ok) (ack fails)
             │         │       │
             ▼         ▼       ▼
-        in_progress succeeded ack_failed
+        processing succeeded ack_failed
                                │     │
                          (ack retry) (ack retry ok)
                                │         │
@@ -168,15 +168,15 @@ The **central idempotency anchor and state machine**. One record per `(subscript
 
 | From | To | Trigger |
 |---|---|---|
-| `pending` | `in_progress` | Engine SELECT FOR UPDATE row lock |
-| `in_progress` | `failed` | Savepoint rollback (invoice not posted) |
-| `in_progress` | `failed` | Draft invoice cancelled by admin |
-| `in_progress` | `ack_pending` | Stage 3.10 savepoint commit — invoice posted |
+| `pending` | `processing` | Engine SELECT FOR UPDATE row lock |
+| `processing` | `failed` | Savepoint rollback (invoice not posted) |
+| `processing` | `failed` | Draft invoice cancelled by admin |
+| `processing` | `ack_pending` | Stage 3.10 savepoint commit — invoice posted |
 | `ack_pending` | `succeeded` | `register_billing_success` succeeds |
 | `ack_pending` | `ack_failed` | `register_billing_success` raises |
 | `ack_failed` | `succeeded` | Ack retry succeeds |
 | `ack_failed` | `ack_failed` | Ack retry fails again |
-| `failed` | `in_progress` | Invoice retry cron |
+| `failed` | `processing` | Invoice retry cron |
 | `succeeded` | — | **Terminal. No transitions.** |
 
 ### Constraints

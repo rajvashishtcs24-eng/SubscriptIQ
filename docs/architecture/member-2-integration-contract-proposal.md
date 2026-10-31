@@ -324,7 +324,7 @@ Member 2 (BillingEngine)                         Member 1 (subscriptiq.subscript
          │  │◀─ {partner_id, currency, lines, ...} ─────────│   │
          │  │                                               │   │
          │  │  [find/create billing ledger]                 │   │
-         │  │  [ledger.state = in_progress]                 │   │
+         │  │  [ledger.state = processing]                 │   │
          │  │  [evaluate & reserve discount]                │   │
          │  │  [account.move.create()]                      │   │
          │  │  [account.move.action_post()]                 │   │

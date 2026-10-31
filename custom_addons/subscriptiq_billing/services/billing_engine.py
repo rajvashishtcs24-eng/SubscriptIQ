@@ -205,7 +205,7 @@ class BillingEngine:
                     env.cr.execute(f"ROLLBACK TO SAVEPOINT {savepoint_name}")
                     savepoint_active = False
                     return
-                elif ledger.state == 'in_progress':
+                elif ledger.state == 'processing':
                     item.write({'state': 'skipped', 'skip_reason': 'concurrent'})
                     env.cr.execute(f"ROLLBACK TO SAVEPOINT {savepoint_name}")
                     savepoint_active = False
@@ -225,8 +225,8 @@ class BillingEngine:
 
             item.billing_ledger_id = ledger.id
 
-            # STAGE 3.4: MARK LEDGER IN-PROGRESS
-            ledger.action_mark_in_progress()
+            # STAGE 3.4: MARK LEDGER PROCESSING
+            ledger.action_mark_processing()
 
             # STAGE 3.5: EVALUATE AND RESERVE DISCOUNT (NO STACKING — T-14)
             total_untaxed = sum(l.get('price_unit', 0.0) * l.get('quantity', 0.0) for l in lines)

@@ -160,7 +160,7 @@ Tests `subscriptiq.billing.run` model — state machine, computed fields, sequen
 
 Tests `subscriptiq.billing.ledger` state machine — the idempotency backbone.
 
-> **Rev 3:** The ledger now has **six** states: `pending` → `in_progress` → `ack_pending` → `succeeded`; and `in_progress` → `failed`; and `ack_pending` → `ack_failed` → `succeeded` (via ack-retry). The invoice-retry cron and ack-retry cron operate on **disjoint** ledger state sets.
+> **Rev 3:** The ledger now has **six** states: `pending` → `processing` → `ack_pending` → `succeeded`; and `processing` → `failed`; and `ack_pending` → `ack_failed` → `succeeded` (via ack-retry). The invoice-retry cron and ack-retry cron operate on **disjoint** ledger state sets.
 
 ### Test cases
 
@@ -169,9 +169,9 @@ Tests `subscriptiq.billing.ledger` state machine — the idempotency backbone.
 | `test_ledger_created_on_first_attempt` | First billing for sub + period | Ledger created with state=pending |
 | `test_ledger_reused_on_retry` | Previous failed ledger exists | Engine reuses existing record; no new ledger created (T-18) |
 | `test_ledger_succeeded_is_skipped` | Ledger.state=succeeded already | BillingRunItem.state=skipped, reason=already_billed |
-| `test_ledger_in_progress_concurrent_skip` | Ledger.state=in_progress from another process | BillingRunItem.state=skipped, reason=concurrent |
+| `test_ledger_processing_concurrent_skip` | Ledger.state=processing from another process | BillingRunItem.state=skipped, reason=concurrent |
 | `test_ledger_uniqueness_constraint` | Two creates for same (sub_id, period_start, period_end) | IntegrityError on second create |
-| `test_ledger_failed_to_in_progress_on_retry` | Retry cron picks up failed ledger | state transitions to in_progress |
+| `test_ledger_failed_to_processing_on_retry` | Retry cron picks up failed ledger | state transitions to processing |
 | `test_ledger_succeeded_immutable` | Attempt to write to succeeded ledger | State does not change; invoice_id preserved |
 | `test_ledger_cancelled_draft_becomes_retryable` | Admin cancels draft invoice | ledger.state=failed; draft_invoice_id cleared; reservation released (T-17) |
 | `test_ledger_retry_count_increments` | Failed attempt | retry_count=1 |

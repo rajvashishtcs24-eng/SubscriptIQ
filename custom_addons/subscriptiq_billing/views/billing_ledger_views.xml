@@ -17,7 +17,7 @@
                 <field name="ack_retry_count"/>
                 <field name="state" widget="badge" 
                        decoration-secondary="state == 'pending'"
-                       decoration-info="state == 'in_progress'"
+                       decoration-info="state == 'processing'"
                        decoration-warning="state == 'ack_pending'"
                        decoration-danger="state in ('failed', 'ack_failed')"
                        decoration-success="state == 'succeeded'"/>
@@ -33,8 +33,8 @@
             <form string="Subscription Billing Ledger" create="false">
                 <header>
                     <button name="%(action_ack_retry_wizard)d" string="Retry Member 1 Acknowledgement" type="action" class="btn-primary" invisible="state not in ('ack_pending', 'ack_failed')"/>
-                    <button name="action_cancel_draft_invoice" string="Cancel Draft Invoice" type="object" class="btn-secondary" invisible="state != 'in_progress' and not draft_invoice_id" confirm="Are you sure you want to cancel the draft invoice and release any reservations?"/>
-                    <field name="state" widget="statusbar" statusbar_visible="pending,in_progress,ack_pending,succeeded"/>
+                    <button name="action_cancel_draft_invoice" string="Cancel Draft Invoice" type="object" class="btn-secondary" invisible="state != 'processing' and not draft_invoice_id" confirm="Are you sure you want to cancel the draft invoice and release any reservations?"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,processing,ack_pending,succeeded"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
@@ -96,7 +96,7 @@
                 <field name="invoice_id"/>
                 <filter name="state_succeeded" string="Succeeded" domain="[('state', '=', 'succeeded')]"/>
                 <filter name="state_pending" string="Pending" domain="[('state', '=', 'pending')]"/>
-                <filter name="state_in_progress" string="In Progress" domain="[('state', '=', 'in_progress')]"/>
+                <filter name="state_processing" string="Processing" domain="[('state', '=', 'processing')]"/>
                 <filter name="state_failed" string="Invoice Failed" domain="[('state', '=', 'failed')]"/>
                 <filter name="state_ack_pending" string="Ack Pending" domain="[('state', '=', 'ack_pending')]"/>
                 <filter name="state_ack_failed" string="Ack Failed" domain="[('state', '=', 'ack_failed')]"/>

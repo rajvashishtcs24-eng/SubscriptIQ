@@ -53,12 +53,12 @@ class TestBillingLedger(BillingTestCommon):
             'billing_period_end': self.period_end,
             'state': 'pending',
         })
-        # pending -> in_progress
-        ledger.action_mark_in_progress()
-        self.assertEqual(ledger.state, 'in_progress')
+        # pending -> processing
+        ledger.action_mark_processing()
+        self.assertEqual(ledger.state, 'processing')
         self.assertTrue(ledger.first_attempted_at)
 
-        # in_progress -> ack_pending
+        # processing -> ack_pending
         move = self.env['account.move'].create({
             'move_type': 'out_invoice',
             'partner_id': self.partner.id,
@@ -80,7 +80,7 @@ class TestBillingLedger(BillingTestCommon):
             'partner_id': self.partner.id,
             'billing_period_start': self.period_start,
             'billing_period_end': self.period_end,
-            'state': 'in_progress',
+            'state': 'processing',
         })
         ledger.action_mark_failed("Test DB failure")
         self.assertEqual(ledger.state, 'failed')
