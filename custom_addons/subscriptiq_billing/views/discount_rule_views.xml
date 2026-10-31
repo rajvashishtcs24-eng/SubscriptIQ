@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Discount Rule List View -->
+    <record id="view_discount_rule_tree" model="ir.ui.view">
+        <field name="name">subscriptiq.discount.rule.tree</field>
+        <field name="model">subscriptiq.discount.rule</field>
+        <field name="arch" type="xml">
+            <list string="Discount Rules">
+                <field name="priority" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="discount_type"/>
+                <field name="discount_value"/>
+                <field name="current_uses"/>
+                <field name="max_uses"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Discount Rule Form View -->
+    <record id="view_discount_rule_form" model="ir.ui.view">
+        <field name="name">subscriptiq.discount.rule.form</field>
+        <field name="model">subscriptiq.discount.rule</field>
+        <field name="arch" type="xml">
+            <form string="Discount Rule">
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name" string="Rule Name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. 15% Early Adopter Discount"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group name="discount_details" string="Discount Definition">
+                            <field name="discount_type" widget="radio"/>
+                            <field name="discount_value"/>
+                            <field name="currency_id" invisible="discount_type != 'fixed'" required="discount_type == 'fixed'"/>
+                            <field name="priority"/>
+                            <field name="code" placeholder="PROMO2026"/>
+                        </group>
+                        <group name="validity" string="Usage &amp; Validity Limits">
+                            <field name="active" invisible="1"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="max_uses"/>
+                            <field name="current_uses"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Eligibility Constraints" name="eligibility">
+                            <group>
+                                <group string="Cart Constraints">
+                                    <field name="min_qty"/>
+                                    <field name="min_amount_untaxed"/>
+                                    <field name="min_amount_currency_id" invisible="1"/>
+                                </group>
+                                <group string="Target Restrictions">
+                                    <field name="subscription_id_filter" placeholder="e.g. 101, 102"/>
+                                    <field name="product_ids" widget="many2many_tags" placeholder="All products if empty"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Description &amp; Notes" name="notes">
+                            <field name="description" placeholder="Internal context, campaign details, or policy approvals."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action for Discount Rules -->
+    <record id="action_discount_rule" model="ir.actions.act_window">
+        <field name="name">Discount Rules</field>
+        <field name="res_model">subscriptiq.discount.rule</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first SubscriptIQ Discount Rule!
+            </p>
+            <p>
+                Configure percentage or fixed promotional discounts with priority rules, eligibility criteria, and usage limits.
+            </p>
+        </field>
+    </record>
+</odoo>

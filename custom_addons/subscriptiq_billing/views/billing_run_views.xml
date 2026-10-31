@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Manual Billing Run Wizard Action -->
+    <record id="action_billing_run_manual_wizard" model="ir.actions.act_window">
+        <field name="name">Run Billing Manually</field>
+        <field name="res_model">subscriptiq.billing.run.manual.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Ack Retry Wizard Action -->
+    <record id="action_ack_retry_wizard" model="ir.actions.act_window">
+        <field name="name">Retry Member 1 Acknowledgement</field>
+        <field name="res_model">subscriptiq.ack.retry.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Manual Run Wizard Form -->
+    <record id="view_billing_run_manual_wizard_form" model="ir.ui.view">
+        <field name="name">subscriptiq.billing.run.manual.wizard.form</field>
+        <field name="model">subscriptiq.billing.run.manual.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Execute Subscription Billing Run">
+                <group>
+                    <field name="billing_date"/>
+                    <field name="subscription_ids" placeholder="e.g. 101, 102 (leave empty to process all due)"/>
+                </group>
+                <footer>
+                    <button name="action_execute" string="Start Billing Run" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Ack Retry Wizard Form -->
+    <record id="view_ack_retry_wizard_form" model="ir.ui.view">
+        <field name="name">subscriptiq.ack.retry.wizard.form</field>
+        <field name="model">subscriptiq.ack.retry.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Retry Member 1 Acknowledgement">
+                <p class="text-muted">
+                    This wizard retries sending acknowledgement to Member 1 for posted invoices whose initial acknowledgement timed out or failed.
+                    No new invoices will be created.
+                </p>
+                <group>
+                    <field name="ledger_ids" widget="many2many_tags" placeholder="Leave empty to process all eligible ack ledgers"/>
+                </group>
+                <footer>
+                    <button name="action_retry" string="Execute Retry" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Billing Run List View -->
+    <record id="view_billing_run_tree" model="ir.ui.view">
+        <field name="name">subscriptiq.billing.run.tree</field>
+        <field name="model">subscriptiq.billing.run</field>
+        <field name="arch" type="xml">
+            <list string="Billing Runs" create="false">
+                <field name="name"/>
+                <field name="billing_date"/>
+                <field name="run_date"/>
+                <field name="triggered_by"/>
+                <field name="subscription_count"/>
+                <field name="invoice_count"/>
+                <field name="failure_count"/>
+                <field name="ack_failure_count"/>
+                <field name="total_billed"/>
+                <field name="duration_seconds" widget="integer"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'running'"
+                       decoration-success="state == 'done'"
+                       decoration-warning="state == 'partial'"
+                       decoration-danger="state == 'failed'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Billing Run Form View -->
+    <record id="view_billing_run_form" model="ir.ui.view">
+        <field name="name">subscriptiq.billing.run.form</field>
+        <field name="model">subscriptiq.billing.run</field>
+        <field name="arch" type="xml">
+            <form string="Billing Run" create="false">
+                <header>
+                    <button name="%(action_billing_run_manual_wizard)d" string="New Manual Run" type="action" class="btn-primary"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,running,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Billing Run Reference"/>
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Run Parameters">
+                            <field name="billing_date"/>
+                            <field name="run_date"/>
+                            <field name="run_end_datetime"/>
+                            <field name="duration_seconds"/>
+                            <field name="triggered_by"/>
+                            <field name="triggered_by_user_id"/>
+                        </group>
+                        <group string="Aggregated Totals">
+                            <field name="subscription_count"/>
+                            <field name="invoice_count"/>
+                            <field name="failure_count"/>
+                            <field name="skipped_count"/>
+                            <field name="ack_failure_count"/>
+                            <field name="total_billed"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Processed Subscriptions" name="items">
+                            <field name="item_ids" readonly="1">
+                                <list string="Processed Subscriptions">
+                                    <field name="subscription_id"/>
+                                    <field name="partner_id"/>
+                                    <field name="billing_period_start"/>
+                                    <field name="billing_period_end"/>
+                                    <field name="invoice_id"/>
+                                    <field name="state" widget="badge"
+                                           decoration-success="state == 'success'"
+                                           decoration-muted="state == 'skipped'"
+                                           decoration-warning="state == 'ack_failed'"
+                                           decoration-danger="state == 'failed'"/>
+                                    <field name="skip_reason" invisible="state != 'skipped'"/>
+                                    <field name="error_message" invisible="state != 'failed'"/>
+                                    <field name="ack_error_message" invisible="state != 'ack_failed'"/>
+                                    <field name="processing_duration_ms"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Run Notes &amp; Diagnostics" name="notes">
+                            <field name="notes" placeholder="Execution notes or operational remarks..."/>
+                            <field name="error_message" invisible="not error_message"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action for Billing Runs -->
+    <record id="action_billing_run" model="ir.actions.act_window">
+        <field name="name">Billing Runs</field>
+        <field name="res_model">subscriptiq.billing.run</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

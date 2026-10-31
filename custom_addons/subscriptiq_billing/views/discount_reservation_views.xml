@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Discount Reservation List View -->
+    <record id="view_discount_reservation_tree" model="ir.ui.view">
+        <field name="name">subscriptiq.discount.reservation.tree</field>
+        <field name="model">subscriptiq.discount.reservation</field>
+        <field name="arch" type="xml">
+            <list string="Discount Reservations" create="false" edit="false">
+                <field name="reserved_at"/>
+                <field name="discount_rule_id"/>
+                <field name="billing_ledger_id"/>
+                <field name="discount_type"/>
+                <field name="discount_value"/>
+                <field name="state" widget="badge" decoration-info="state == 'reserved'" decoration-success="state == 'consumed'" decoration-muted="state == 'released'"/>
+                <field name="consumed_at"/>
+                <field name="released_at"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Action for Discount Reservations -->
+    <record id="action_discount_reservation" model="ir.actions.act_window">
+        <field name="name">Discount Reservations</field>
+        <field name="res_model">subscriptiq.discount.reservation</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

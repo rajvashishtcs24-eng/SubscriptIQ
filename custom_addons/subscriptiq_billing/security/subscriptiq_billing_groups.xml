@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Billing User Group -->
+        <record id="group_billing_user" model="res.groups">
+            <field name="name">Billing User</field>
+            <field name="category_id" ref="brightloop_base.module_category_subscriptiq"/>
+            <field name="implied_ids" eval="[(4, ref('brightloop_base.group_subscriptiq_staff'))]"/>
+        </record>
+
+        <!-- Billing Manager Group -->
+        <record id="group_billing_manager" model="res.groups">
+            <field name="name">Billing Manager</field>
+            <field name="category_id" ref="brightloop_base.module_category_subscriptiq"/>
+            <field name="implied_ids" eval="[(4, ref('group_billing_user')), (4, ref('brightloop_base.group_subscriptiq_admin'))]"/>
+            <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        </record>
+    </data>
+</odoo>

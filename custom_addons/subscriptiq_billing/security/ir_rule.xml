@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Portal Customer Rule for Billing Ledger -->
+        <record id="billing_ledger_portal_rule" model="ir.rule">
+            <field name="name">Portal Customer Billing Ledger Access</field>
+            <field name="model_id" ref="model_subscriptiq_billing_ledger"/>
+            <field name="domain_force">[('partner_id', '=', user.partner_id.id)]</field>
+            <field name="groups" eval="[(4, ref('brightloop_base.group_subscriptiq_customer'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Internal Staff / Billing User Rule -->
+        <record id="billing_ledger_user_rule" model="ir.rule">
+            <field name="name">Billing Staff Full Access</field>
+            <field name="model_id" ref="model_subscriptiq_billing_ledger"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_billing_user'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+    </data>
+</odoo>
