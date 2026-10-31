@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from odoo import http
 from odoo.http import request
 from odoo.exceptions import AccessError, MissingError
@@ -9,10 +10,11 @@ class SubscriptiqCustomerPortal(CustomerPortal):
     def _prepare_home_portal_values(self, counters):
         values = super()._prepare_home_portal_values(counters)
         if 'subscription_count' in counters:
-            if 'subscription.subscription' in request.env:
-                values['subscription_count'] = request.env['subscription.subscription'].search_count([
+            if 'subscriptiq.subscription' in request.env:
+                count = request.env['subscriptiq.subscription'].search_count([
                     ('partner_id', '=', request.env.user.partner_id.id)
                 ])
+                values['subscription_count'] = count
             else:
                 values['subscription_count'] = 2
         return values
@@ -48,23 +50,27 @@ class SubscriptiqCustomerPortal(CustomerPortal):
         partner = request.env.user.partner_id
         formatted_subs = []
 
-        if 'subscription.subscription' in request.env:
-            records = request.env['subscription.subscription'].search([
+        if 'subscriptiq.subscription' in request.env:
+            records = request.env['subscriptiq.subscription'].search([
                 ('partner_id', '=', partner.id)
             ])
             for r in records:
+                sym = r.currency_id.symbol if r.currency_id and r.currency_id.symbol else '$'
+                freq = dict(r._fields['billing_frequency'].selection).get(r.billing_frequency, 'Monthly') if r.billing_frequency else 'Monthly'
+                st = dict(r._fields['state'].selection).get(r.state, 'Active') if r.state else 'Active'
                 formatted_subs.append({
                     'id': r.id,
                     'name': r.name or f"SUB/{r.id}",
-                    'plan_name': r.plan_id.name if hasattr(r, 'plan_id') and r.plan_id else "Standard Plan",
-                    'start_date': str(r.start_date) if hasattr(r, 'start_date') and r.start_date else "N/A",
-                    'next_invoice_date': str(getattr(r, 'next_invoice_date', 'N/A')),
-                    'billing_period': getattr(r, 'billing_period', 'Monthly'),
-                    'state': getattr(r, 'state', 'Active'),
-                    'recurring_amount': f"${getattr(r, 'recurring_amount', 0.0):,.2f}",
-                    'description': getattr(r, 'description', 'Standard active subscription tier.'),
+                    'plan_name': r.plan_id.name if r.plan_id else "Standard Plan",
+                    'start_date': str(r.start_date) if r.start_date else "N/A",
+                    'next_invoice_date': str(r.next_billing_date) if r.next_billing_date else "N/A",
+                    'billing_period': freq,
+                    'state': st,
+                    'recurring_amount': f"{sym}{r.amount_total:,.2f}",
+                    'description': r.plan_id.description or "Active subscription commitment.",
                 })
 
+        # Provide demonstration fallback only if the customer has no subscriptions yet
         if not formatted_subs:
             formatted_subs = self._get_mock_subscriptions()
 
@@ -81,21 +87,24 @@ class SubscriptiqCustomerPortal(CustomerPortal):
         partner = request.env.user.partner_id
         sub_data = None
 
-        if 'subscription.subscription' in request.env:
-            record = request.env['subscription.subscription'].browse(sub_id)
+        if 'subscriptiq.subscription' in request.env:
+            record = request.env['subscriptiq.subscription'].browse(sub_id)
             if record.exists():
                 if record.partner_id.id != partner.id and not request.env.is_admin():
                     raise AccessError("You do not have access to this subscription.")
+                sym = record.currency_id.symbol if record.currency_id and record.currency_id.symbol else '$'
+                freq = dict(record._fields['billing_frequency'].selection).get(record.billing_frequency, 'Monthly') if record.billing_frequency else 'Monthly'
+                st = dict(record._fields['state'].selection).get(record.state, 'Active') if record.state else 'Active'
                 sub_data = {
                     'id': record.id,
                     'name': record.name or f"SUB/{record.id}",
-                    'plan_name': record.plan_id.name if hasattr(record, 'plan_id') and record.plan_id else "Standard Plan",
-                    'start_date': str(record.start_date) if hasattr(record, 'start_date') and record.start_date else "N/A",
-                    'next_invoice_date': str(getattr(record, 'next_invoice_date', 'N/A')),
-                    'billing_period': getattr(record, 'billing_period', 'Monthly'),
-                    'state': getattr(record, 'state', 'Active'),
-                    'recurring_amount': f"${getattr(record, 'recurring_amount', 0.0):,.2f}",
-                    'description': getattr(record, 'description', 'Standard active subscription tier.'),
+                    'plan_name': record.plan_id.name if record.plan_id else "Standard Plan",
+                    'start_date': str(record.start_date) if record.start_date else "N/A",
+                    'next_invoice_date': str(record.next_billing_date) if record.next_billing_date else "N/A",
+                    'billing_period': freq,
+                    'state': st,
+                    'recurring_amount': f"{sym}{record.amount_total:,.2f}",
+                    'description': record.plan_id.description or "Active subscription commitment.",
                 }
 
         if not sub_data:

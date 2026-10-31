@@ -12,5 +12,21 @@
             <field name="perm_create" eval="False"/>
             <field name="perm_unlink" eval="False"/>
         </record>
+
+        <!-- Customer Portal: Subscriptions Personal Isolation -->
+        <record id="rule_subscription_customer_isolation" model="ir.rule">
+            <field name="name">Customer: Subscriptions Personal Isolation</field>
+            <field name="model_id" ref="subscriptiq_subscription.model_subscriptiq_subscription"/>
+            <field name="domain_force">[
+                '|',
+                ('partner_id', '=', user.partner_id.id),
+                ('partner_id', 'child_of', user.partner_id.commercial_partner_id.id)
+            ]</field>
+            <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
     </data>
 </odoo>

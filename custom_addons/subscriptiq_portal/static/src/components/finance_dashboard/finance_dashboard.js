@@ -4,7 +4,7 @@ import { useService } from "@web/core/utils/hooks";
 import { Component, onWillStart, useState } from "@odoo/owl";
 
 export class SubscriptionFinanceDashboard extends Component {
-    static template = "subscription_platform.FinanceDashboardTemplate";
+    static template = "subscriptiq_portal.FinanceDashboardTemplate";
 
     setup() {
         this.orm = useService("orm");

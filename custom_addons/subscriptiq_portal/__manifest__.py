@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
 {
     'name': 'SubscriptIQ Portal & Experience',
-    'version': '1.0.0',
+    'version': '19.0.1.0.0',
     'summary': 'Customer portal, security constraints, staff operations, and analytics engine.',
     'category': 'Sales/Subscription',
     'author': 'Brightloop Team Member 3',
@@ -10,6 +11,8 @@
         'mail',
         'account',
         'brightloop_base',
+        'subscriptiq_subscription',
+        'subscriptiq_billing',
     ],
     'data': [
         'security/ir.model.access.csv',
