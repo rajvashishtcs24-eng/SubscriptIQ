@@ -18,16 +18,18 @@ class SubscriptionAdapter:
         """
         Retrieves active subscriptions due for billing on or before billing_date.
         Calls env['subscriptiq.subscription'].get_subscriptions_due_for_billing(billing_date).
+        Strictly excludes paused, closed, cancelled, or draft subscriptions.
         """
         model_name = 'subscriptiq.subscription'
         if model_name in env:
             sub_model = env[model_name]
             if hasattr(sub_model, 'get_subscriptions_due_for_billing'):
                 return sub_model.get_subscriptions_due_for_billing(billing_date)
-            # Default search fallback if model exists without helper method
+            # Default search fallback if model exists without helper method:
+            # Strictly active, next_billing_date <= billing_date (never bill in advance)
             domain = [
                 ('next_billing_date', '<=', billing_date),
-                ('state', 'in', ['active']),
+                ('state', '=', 'active'),
             ]
             return sub_model.search(domain).ids
 
@@ -39,6 +41,10 @@ class SubscriptionAdapter:
         """
         Retrieves complete billing payload for subscription_id.
         Calls env['subscriptiq.subscription'].get_billing_payload(subscription_id).
+
+        CRITICAL PRICING BOUNDARY:
+        Customer-agreed prices are snapshotted on subscription lines (line_ids).
+        Billing NEVER calculates recurring invoices directly from mutable subscriptiq.plan.line prices.
         """
         model_name = 'subscriptiq.subscription'
         if model_name in env:
@@ -48,6 +54,14 @@ class SubscriptionAdapter:
             # Fallback if standard model record exists
             sub = sub_model.browse(subscription_id)
             if sub.exists():
+                # Enforce lifecycle boundary: only active subscriptions can be billed
+                sub_state = getattr(sub, 'state', 'active')
+                if sub_state != 'active':
+                    raise ValueError(
+                        f"Subscription {subscription_id} is in non-billable state '{sub_state}'. "
+                        "Billing cannot generate invoices for paused, closed, or draft subscriptions."
+                    )
+
                 return {
                     'subscription_id': sub.id,
                     'partner_id': sub.partner_id.id if hasattr(sub, 'partner_id') else False,
@@ -59,10 +73,12 @@ class SubscriptionAdapter:
                     'billing_day_anchor': getattr(sub, 'billing_day_anchor', 1),
                     'lines': [
                         {
+                            # Product variant from subscription line snapshot
                             'product_id': line.product_id.id,
-                            'name': line.name or line.product_id.name,
+                            'name': line.name or line.product_id.display_name or line.product_id.name,
+                            # Customer-agreed quantity and agreed unit price snapshot
                             'quantity': line.quantity,
-                            'price_unit': line.price_unit,
+                            'price_unit': line.price_unit,  # Immutable customer agreement snapshot
                             'tax_ids': line.tax_ids.ids if hasattr(line, 'tax_ids') else [],
                             'uom_id': getattr(line, 'uom_id', False) and line.uom_id.id or False,
                         }
