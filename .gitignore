@@ -41,7 +41,7 @@ logs/
 # Odoo local filestore & session data (host-mounted)
 filestore/
 sessions/
-data/
+/data/
 
 # Testing & Coverage
 .coverage
