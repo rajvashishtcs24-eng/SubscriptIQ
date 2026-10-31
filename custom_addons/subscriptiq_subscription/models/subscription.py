@@ -790,6 +790,131 @@ class SubscriptiqSubscription(models.Model):
         return {'success': True, 'next_billing_date': sub.next_billing_date}
 
     # -------------------------------------------------------------------------
+    # 8B. Member 2 Billing Integration — Adapter-Compatible Aliases
+    #
+    # Member 2's SubscriptionAdapter (subscriptiq_billing) discovers methods
+    # via hasattr() using these exact names. These thin aliases bridge the
+    # contract without duplicating business logic.
+    # -------------------------------------------------------------------------
+
+    @api.model
+    def get_subscriptions_due_for_billing(self, billing_date=None):
+        """Adapter alias: returns flat list of subscription IDs due for billing.
+
+        Called by subscriptiq_billing.SubscriptionAdapter.get_subscriptions_due_for_billing().
+
+        Args:
+            billing_date (date|None): Target billing date. Defaults to today.
+
+        Returns:
+            list[int]: Database IDs of active subscriptions due for billing.
+        """
+        if billing_date is None:
+            billing_date = fields.Date.today()
+        domain = [
+            ('state', '=', 'active'),
+            ('next_billing_date', '!=', False),
+            ('next_billing_date', '<=', billing_date),
+            ('start_date', '!=', False),
+            ('start_date', '<=', billing_date),
+        ]
+        subs = self.search(domain, order='next_billing_date asc, id asc')
+        subs = subs.filtered(lambda s: not s.end_date or s.end_date >= billing_date)
+        return subs.ids
+
+    @api.model
+    def get_billing_payload(self, subscription_id):
+        """Adapter alias: returns structured billing payload for one subscription.
+
+        Called by subscriptiq_billing.SubscriptionAdapter.get_billing_payload().
+
+        Args:
+            subscription_id (int): Database ID of subscriptiq.subscription.
+
+        Returns:
+            dict: Payload with subscription_id, partner_id, currency_id,
+                  fiscal_position_id, payment_term_id, billing_frequency,
+                  next_billing_date, billing_day_anchor, lines.
+
+        Raises:
+            ValueError: If the subscription is non-billable or not found.
+        """
+        sub = self.browse(subscription_id)
+        if not sub.exists():
+            raise ValueError(f"Subscription {subscription_id} does not exist.")
+        if sub.state != 'active':
+            raise ValueError(
+                f"Subscription {subscription_id} is in non-billable state '{sub.state}'. "
+                "Billing cannot generate invoices for paused, closed, or draft subscriptions."
+            )
+        return {
+            'subscription_id': sub.id,
+            'partner_id': sub.partner_id.id,
+            'currency_id': sub.currency_id.id,
+            'fiscal_position_id': False,
+            'payment_term_id': sub.payment_term_id.id if sub.payment_term_id else False,
+            'billing_frequency': sub.billing_frequency,
+            'next_billing_date': sub.next_billing_date,
+            'billing_day_anchor': sub.next_billing_date.day if sub.next_billing_date else 1,
+            'lines': [
+                {
+                    'product_id': line.product_id.id,
+                    'name': line.name or line.product_id.display_name,
+                    'quantity': line.quantity,
+                    'price_unit': line.price_unit,
+                    'discount': line.discount,
+                    'tax_ids': line.tax_ids.ids,
+                    'uom_id': False,
+                }
+                for line in sub.line_ids
+            ],
+        }
+
+    @api.model
+    def register_billing_success(self, subscription_id, invoice_id, next_billing_date):
+        """Adapter alias: acknowledge a successful billing cycle.
+
+        Called by subscriptiq_billing.SubscriptionAdapter.register_billing_success().
+        Delegates to action_register_billing_success() for row locking + event logging.
+
+        Args:
+            subscription_id (int): Database ID of subscriptiq.subscription.
+            invoice_id (int): Database ID of the posted account.move.
+            next_billing_date (date): Next billing date computed by Member 2.
+
+        Returns:
+            None
+        """
+        from datetime import timedelta as _timedelta
+        sub = self.browse(subscription_id)
+        if not sub.exists():
+            _logger.warning(
+                "register_billing_success called for non-existent subscription %s",
+                subscription_id,
+            )
+            return
+        billing_period_start = sub.next_billing_date
+        if not billing_period_start:
+            _logger.warning(
+                "register_billing_success: subscription %s has no next_billing_date, skipping.",
+                subscription_id,
+            )
+            return
+        # Period end = one day before M2's computed next billing date
+        billing_period_end = next_billing_date - _timedelta(days=1)
+        result = self.action_register_billing_success(
+            subscription_id=subscription_id,
+            billing_period_start=billing_period_start,
+            billing_period_end=billing_period_end,
+            invoice_id=invoice_id,
+        )
+        if not result.get('success'):
+            _logger.warning(
+                "register_billing_success for sub %s returned failure: %s",
+                subscription_id, result.get('error'),
+            )
+
+    # -------------------------------------------------------------------------
     # Smart Button Action
     # -------------------------------------------------------------------------
 
