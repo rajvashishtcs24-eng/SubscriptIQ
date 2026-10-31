@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_audit_log_admin,access_audit_log_admin,model_subscription_audit_log,brightloop_base.group_subscriptiq_admin,1,1,1,1
+access_audit_log_staff,access_audit_log_staff,model_subscription_audit_log,brightloop_base.group_subscriptiq_staff,1,0,0,0
